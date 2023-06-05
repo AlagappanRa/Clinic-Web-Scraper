@@ -3,22 +3,27 @@
 # Microsoft Edge
 # Version 114.0.1823.37 (Official build) (64-bit) [my build, if its the same, you can use the local driver]
 
-from selenium import webdriver
 import time
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 
 driver = webdriver.Edge('./edgedriver_win64/msedgedriver.exe') 
 
 # Navigate to the page
 driver.get('https://www.hcidirectory.gov.sg')
 
-# Find the button and click it
-search_button = driver.find_element_by_id('search_btn')
+search_button = driver.find_element(By.ID, "search_btn")
 search_button.click()
 
-# => move to https://www.hcidirectory.gov.sg/hcidirectory/clinic.do
-# Wait for 5 seconds for the JavaScript to load on the site
-time.sleep(5)
+# You may need to wait for JavaScript to load after the click
+# Here's how you might do it with WebDriverWait and expected_conditions:
 
-while True:
-    time.sleep(5) 
-    #Infinite loop to artificially keep the browser open until a Control C Keyboard Interrupt is sent
+wait = WebDriverWait(driver, 10)
+wait.until(EC.presence_of_element_located((By.CLASS_NAME, 'r_arrow')))
+
+while(True): 
+    time.sleep(5)
+
+
