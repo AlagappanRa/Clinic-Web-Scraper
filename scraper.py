@@ -4,7 +4,8 @@
 # Microsoft Edge
 # Version 114.0.1823.37 (Official build) (64-bit) [my build, if its the same, you can use the local driver]
 
-import time
+
+import csv, time
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -25,7 +26,16 @@ search_button.click()
 wait = WebDriverWait(driver, 10)
 wait.until(EC.presence_of_element_located((By.CLASS_NAME, 'r_arrow')))
 
-while (True): 
+# Handler function to open the CSV file and return the writer
+def get_writer(filename, fieldnames):
+    csvfile = open(filename, 'x', newline = '')
+    writer = csv.DictWriter(csvfile, fieldnames = fieldnames)
+    writer.writeheader()
+    return csvfile, writer
+
+csvfile, writer = get_writer('clinics.csv', ['Clinic Name', 'Clinic URL', 'Telephone Number', 'Fax Number', 'Address', 'Opening Hours'])
+scraped_count = 0
+while (scraped_count < 4926): 
     try:
         right_arrow = driver.find_element(By.CLASS_NAME, "r_arrow")
         result_containers = driver.find_elements_by_class_name(By.CLASS_NAME, "result_container")
@@ -50,7 +60,7 @@ while (True):
             # Clinic name 
             clinic_name = name_anchor_tag.text
 
-            # @TODO: Phone numbers inconsistent
+            # @Resolved: Phone numbers inconsistent
             # Some F. 0 and some F. 00000000 and some only have F no T
             # Phone numbers are in the telephone span - the strip removes the &nbsp; 
             # [Translated as space in python]
@@ -69,7 +79,7 @@ while (True):
             index = fax_number_string.find('F')
             index += 2
             fax_number_string = fax_number_string[index:].strip()
-            
+
             # If there is an anchor tag, extract the telephone number and fax number
             if telephone_span_anchor_tag != None:
                 telephone_number_string = telephone_span_anchor_tag.text.strip()
@@ -125,11 +135,21 @@ while (True):
                 timings is in the format:
                 'Public Holiday :  Closed | Monday to Friday : 08:00 am to 02:00 pm, 05:00 pm to 08:30 pm | Saturday : 08:00 am to 02:00 pm | Sunday : Closed'
                 '''
+                # Write to CSV
+                writer.writerow({'Clinic Name': clinic_name, 'Clinic URL': clinic_special_listing, 'Telephone Number': telephone_number_string, 'Fax Number': fax_number_string, 'Address': address_text, 'Opening Hours': timings})
 
+                # Increment the scraped count
+                scraped_count += 1
+        # This should raise an exception at the end as right_arrow element is None
+        # None.click() should raise AttributeError
         right_arrow.click()
-    except:
+    except Exception as e:
+        print(e)
+    finally:
+        csvfile.close() # this must be executed regardless to prevent memory leak
         break
 
+csvfile.close() # this must be executed regardless to prevent memory leak
 time.sleep(30)
 
 
