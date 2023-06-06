@@ -18,8 +18,8 @@ time.sleep(5)
 search_button = driver.find_element(By.ID, "search_btn")
 search_button.click()
 
-# You may need to wait for JavaScript to load after the click
-# Here's how you might do it with WebDriverWait and expected_conditions:
+# Wait for JavaScript to load after the click
+# Used WebDriverWait and expected_conditions:
 
 wait = WebDriverWait(driver, 10)
 wait.until(EC.presence_of_element_located((By.CLASS_NAME, 'r_arrow')))
@@ -49,6 +49,8 @@ while (True):
             # Clinic name 
             clinic_name = name_anchor_tag.text
 
+            # @TODO: Phone numbers inconsistent
+            # Some F. 0 and some F. 00000000 and some only have F no T
             # Phone numbers are in the telephone span - the strip removes the &nbsp; 
             # [Translated as space in python]
             telephone_span_anchor_tag = telephone_span.find_element(By.TAG_NAME, "a")
@@ -85,6 +87,44 @@ while (True):
             '''
             address_text = address_text.replace("\n", ",")
 
+            # Operations for column 3
+            # Opening hours are in column 3
+
+            '''
+            Values in col3 are either: No <strong> tags or <strong> tags
+            No <strong> tags => "Please call the clinic for operating hours"
+            This will be represented as None, and subseqently when the DictWriter writes to the CSV, it will be an empty cell, or ...,,... in the CSV [where in between the commas is an empty cell]
+            '''
+            opening_hours_time_span = opening_hours_col.find_element(By.CLASS_NAME, "time")
+            opening_hours_strong_tags = opening_hours_time_span.find_elements(By.TAG_NAME, "strong")
+
+            # No strong tags means no opening hours
+            if (len(opening_hours_strong_tags) == 0):
+                opening_hours = None
+            else:
+                timings = opening_hours_time_span.text
+                '''
+                timings is in the format:
+                " : 08:00 am to 01:00 pm, 02:00 pm to 04:30 pm"
+                <br>
+                " : 08:00 am to 12:30 pm"
+                <br>
+                " : Closed " 
+
+                to simulate this in python, we can use:
+                timings = " : 08:00 am to 01:00 pm, 02:00 pm to 04:30 pm\n : 08:00 am to 12:30 pm\n : Closed "
+                '''
+                # "Monday to Sunday" is the strong_tag
+                strong_tags_text_list = list(map(lambda strong_tag: strong_tag.text, opening_hours_strong_tags))
+                
+                # First tag has been appended in front
+                timings = strong_tags_text_list[0] + timings
+
+                counter = 1
+                for i in range(len(timings)):
+                    if (timings[i] == "\n"):
+                        timings.replace("\n", ", " + strong_tags_text_list[counter])
+                        counter += 1
 
         right_arrow.click()
     except:
