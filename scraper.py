@@ -1,3 +1,4 @@
+# @author: Alagappan Ramanthan <github.com/AlagappanRa>
 # Requirements: pip install selenium
 # Download the Edge WebDriver from https://developer.microsoft.com/en-us/microsoft-edge/tools/webdriver/ [And find your correct driver version -> install it in the same folder as this file]
 # Microsoft Edge
@@ -54,20 +55,28 @@ while (True):
             # Phone numbers are in the telephone span - the strip removes the &nbsp; 
             # [Translated as space in python]
             telephone_span_anchor_tag = telephone_span.find_element(By.TAG_NAME, "a")
-            telephone_number_string = telephone_span_anchor_tag.text.strip()
-
             fax_number_string = telephone_span.text.strip()
             '''
             fax_number_string is in the format:
-                "T."
-                <br>
-                "F.67581374"
-
-                to simulate this in python, we can use 
-                fax_number_string = "T.\nF.67581374"
+            <If anchor tag exists>
+                fax_number_string = " T.  8218092682180926\n F.  0 "
                 To remove unwanted characters, we can use fax_number_string[5:]
+
+            <If anchor tag does not exist>
+                fax_number_string = " F.  67581374 "
+                To remove unwanted characters, we can use fax_number_string[2:]
             '''
-            fax_number_string = fax_number_string[5:]
+            index = fax_number_string.find('F')
+            index += 2
+            fax_number_string = fax_number_string[index:].strip()
+            
+            # If there is an anchor tag, extract the telephone number and fax number
+            if telephone_span_anchor_tag != None:
+                telephone_number_string = telephone_span_anchor_tag.text.strip()
+
+            # Cleaning up the fax number as the fax number could be 0 or 00000000, both will be represented as None
+            if (int(fax_number_string) == 0):
+                fax_number_string = None
 
             # Operations for column 2
             # Address is in column 2
@@ -105,26 +114,17 @@ while (True):
                 timings = opening_hours_time_span.text
                 '''
                 timings is in the format:
-                " : 08:00 am to 01:00 pm, 02:00 pm to 04:30 pm"
-                <br>
-                " : 08:00 am to 12:30 pm"
-                <br>
-                " : Closed " 
+                'Public Holiday :  Closed\nMonday to Friday : 08:00 am to 02:00 pm, 05:00 pm to 08:30 pm\nSaturday : 08:00 am to 02:00 pm\nSunday :  Closed'
 
                 to simulate this in python, we can use:
                 timings = " : 08:00 am to 01:00 pm, 02:00 pm to 04:30 pm\n : 08:00 am to 12:30 pm\n : Closed "
                 '''
-                # "Monday to Sunday" is the strong_tag
-                strong_tags_text_list = list(map(lambda strong_tag: strong_tag.text, opening_hours_strong_tags))
-                
-                # First tag has been appended in front
-                timings = strong_tags_text_list[0] + timings
+                timings = timings.replace("\n", " | ")
 
-                counter = 1
-                for i in range(len(timings)):
-                    if (timings[i] == "\n"):
-                        timings.replace("\n", ", " + strong_tags_text_list[counter])
-                        counter += 1
+                '''
+                timings is in the format:
+                'Public Holiday :  Closed | Monday to Friday : 08:00 am to 02:00 pm, 05:00 pm to 08:30 pm | Saturday : 08:00 am to 02:00 pm | Sunday : Closed'
+                '''
 
         right_arrow.click()
     except:
