@@ -28,24 +28,25 @@ wait.until(EC.presence_of_element_located((By.CLASS_NAME, 'r_arrow')))
 
 # Handler function to open the CSV file and return the writer
 def get_writer(filename, fieldnames):
-    csvfile = open(filename, 'x', newline = '')
+    csvfile = open(filename, 'w', newline = '')
     writer = csv.DictWriter(csvfile, fieldnames = fieldnames)
     writer.writeheader()
     return csvfile, writer
 
 csvfile, writer = get_writer('clinics.csv', ['Clinic Name', 'Clinic URL', 'Telephone Number', 'Fax Number', 'Address', 'Opening Hours'])
-scraped_count = 0
-while (scraped_count < 4926): 
+
+while (True): 
     try:
         right_arrow = driver.find_element(By.CLASS_NAME, "r_arrow")
-        result_containers = driver.find_elements_by_class_name(By.CLASS_NAME, "result_container")
-        
+        # The [1:-1] to ignore the first element and last elements picked up as it shares a similar partial name with "result_container" called "showing results result container"
+        result_containers = driver.find_elements(By.CLASS_NAME, "result_container")[1:-1]
+    
         for container in result_containers:
             # Each container has 3 columns
             name_and_two_phone_numbers_col = container.find_element(By.CLASS_NAME, "col1")
             address_col = container.find_element(By.CLASS_NAME, "col2")
             opening_hours_col = container.find_element(By.CLASS_NAME, "col3")
-
+            
             # Operations for column 1
             # Name and phone numbers are in column 1
             name_span = name_and_two_phone_numbers_col.find_element(By.CLASS_NAME, "name")
@@ -56,37 +57,28 @@ while (scraped_count < 4926):
 
             # URL for the clinic's page
             clinic_special_listing = name_anchor_tag.get_attribute('href')
-
+            
             # Clinic name 
             clinic_name = name_anchor_tag.text
-
-            # @Resolved: Phone numbers inconsistent
-            # Some F. 0 and some F. 00000000 and some only have F no T
-            # Phone numbers are in the telephone span - the strip removes the &nbsp; 
-            # [Translated as space in python]
-            telephone_span_anchor_tag = telephone_span.find_element(By.TAG_NAME, "a")
-            fax_number_string = telephone_span.text.strip()
+        
             '''
-            fax_number_string is in the format:
-            <If anchor tag exists>
-                fax_number_string = " T.  8218092682180926\n F.  0 "
-                To remove unwanted characters, we can use fax_number_string[5:]
-
-            <If anchor tag does not exist>
-                fax_number_string = " F.  67581374 "
-                To remove unwanted characters, we can use fax_number_string[2:]
+            @Resolved: Phone numbers inconsistent
+            Some F. 0 and some F. 00000000 and some only have F no T
+            Cleaning up the fax number as the fax number could be 0 or 00000000, both will be represented as None
+            text = "T.  66940100\nF.  65700580"
+            OR
+            text = "T.  66940100\nF.  0" 
+            OR
+            text = "F. 0"
+            OR
+            text = "F. 00000000" 
             '''
-            index = fax_number_string.find('F')
-            index += 2
-            fax_number_string = fax_number_string[index:].strip()
-
-            # If there is an anchor tag, extract the telephone number and fax number
-            if telephone_span_anchor_tag != None:
-                telephone_number_string = telephone_span_anchor_tag.text.strip()
-
-            # Cleaning up the fax number as the fax number could be 0 or 00000000, both will be represented as None
+            
+            text = name_and_two_phone_numbers_col.text.strip()
+            telephone_number_string = text[text.find("T.") + 2 : text.find("F.")].strip()
+            fax_number_string = text[text.find("F.") + 2 : ].strip()
             if (int(fax_number_string) == 0):
-                fax_number_string = None
+                fax_number_string = ""
 
             # Operations for column 2
             # Address is in column 2
@@ -104,52 +96,46 @@ while (scraped_count < 4926):
                 address_text = "1 MARITIME SQUARE\nHARBOURFRONT CENTRE\n#02-108 Singapore 099253"
                 All the "\n" will be replaced with ","
             '''
-            address_text = address_text.replace("\n", ",")
-
+            address_text = address_text.replace("\n", ", ")
+            
             # Operations for column 3
             # Opening hours are in column 3
 
             '''
-            Values in col3 are either: No <strong> tags or <strong> tags
-            No <strong> tags => "Please call the clinic for operating hours"
-            This will be represented as None, and subseqently when the DictWriter writes to the CSV, it will be an empty cell, or ...,,... in the CSV [where in between the commas is an empty cell]
+            "Please call the clinic for operating hours" will be represented as None, and subseqently when the DictWriter writes to the CSV, it will be an empty cell, or ...,,... in the CSV [where in between the commas is an empty cell]
             '''
             opening_hours_time_span = opening_hours_col.find_element(By.CLASS_NAME, "time")
-            opening_hours_strong_tags = opening_hours_time_span.find_elements(By.TAG_NAME, "strong")
-
-            # No strong tags means no opening hours
-            if (len(opening_hours_strong_tags) == 0):
-                opening_hours = None
+            opening_span_text = opening_hours_time_span.text.strip()
+            if (opening_span_text == "Please call the clinic for operating hours"):
+                timings = ""
             else:
-                timings = opening_hours_time_span.text
+                timings = opening_span_text
+                timings = timings.replace("\n", " | ")
                 '''
                 timings is in the format:
                 'Public Holiday :  Closed\nMonday to Friday : 08:00 am to 02:00 pm, 05:00 pm to 08:30 pm\nSaturday : 08:00 am to 02:00 pm\nSunday :  Closed'
 
                 to simulate this in python, we can use:
                 timings = " : 08:00 am to 01:00 pm, 02:00 pm to 04:30 pm\n : 08:00 am to 12:30 pm\n : Closed "
-                '''
-                timings = timings.replace("\n", " | ")
-
-                '''
+        
                 timings is in the format:
                 'Public Holiday :  Closed | Monday to Friday : 08:00 am to 02:00 pm, 05:00 pm to 08:30 pm | Saturday : 08:00 am to 02:00 pm | Sunday : Closed'
                 '''
                 # Write to CSV
-                writer.writerow({'Clinic Name': clinic_name, 'Clinic URL': clinic_special_listing, 'Telephone Number': telephone_number_string, 'Fax Number': fax_number_string, 'Address': address_text, 'Opening Hours': timings})
+                # Print each attribute to console
 
-                # Increment the scraped count
-                scraped_count += 1
+            info = {'Clinic Name': clinic_name, 'Clinic URL': clinic_special_listing, 'Telephone Number': telephone_number_string, 'Fax Number': fax_number_string, 'Address': address_text, 'Opening Hours': timings}
+            writer.writerow(info)
+            print(info)
+
+        # Sleep for 5 seconds to prevent spamming the server
+        time.sleep(5) 
         # This should raise an exception at the end as right_arrow element is None
         # None.click() should raise AttributeError
         right_arrow.click()
     except Exception as e:
         print(e)
-    finally:
-        csvfile.close() # this must be executed regardless to prevent memory leak
         break
 
 csvfile.close() # this must be executed regardless to prevent memory leak
-time.sleep(30)
-
-
+driver.close() # this must be executed regardless to prevent memory leak
