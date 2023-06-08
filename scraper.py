@@ -80,10 +80,24 @@ def get_clinic_details(global_id):
         '''
         
         text = name_and_two_phone_numbers_col.text.strip()
+
         telephone_number_string = text[text.find("T.") + 2 : text.find("F.")].strip()
+
+        try:
+            int(telephone_number_string)
+            if ((int(telephone_number_string) == 0) | (len(telephone_number_string) != 8)):
+                telephone_number_string = ""
+            elif ((len(telephone_number_string) == 10) & (telephone_number_string.startswith("65"))):
+                telephone_number_string = telephone_number_string[2:]
+
+        except ValueError:
+            telephone_number_string = ""
+
         fax_number_string = text[text.find("F.") + 2 : ].strip()
-        if (int(fax_number_string) == 0):
+        if ((int(fax_number_string)) == 0 | (len(fax_number_string) != 8)):
             fax_number_string = ""
+        elif ((len(fax_number_string) == 10) & (fax_number_string.startswith("65"))):
+                fax_number_string = fax_number_string[2:]
 
         # Operations for column 2
         # Address is in column 2
@@ -128,8 +142,6 @@ def get_clinic_details(global_id):
             '''
 
         # Write to CSV
-        # Print each attribute to console
-
         info = {
             'ID': global_id,
             'Clinic Name': clinic_name, 
@@ -140,6 +152,12 @@ def get_clinic_details(global_id):
             'Opening Hours': timings
             }
         writer.writerow(info)
+        #(For debugging purposes)
+        '''
+        for item in info.items():
+            print(item)
+        print()
+        '''
     return global_id
 
 global_id = 0
@@ -147,7 +165,7 @@ while (True):
     try:
         global_id = get_clinic_details(global_id)
         # Sleep for 1.2 seconds to prevent spamming the server
-        time.sleep(1.2) 
+        # time.sleep(1.2) 
         # This should raise an exception at the end as right_arrow element does not exist
         right_arrow = driver.find_element(By.CLASS_NAME, "r_arrow")
         right_arrow.click()
