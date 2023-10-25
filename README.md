@@ -21,7 +21,6 @@ Navigate to the directory where you cloned the repository:
 `pip install selenium`
 
 4. Install Web Driver (Skip this step if you already have a driver installed OR will be using microsoft edge)
-For Selenium to work, you'll also need a WebDriver for your browser
 - [ChromeDriver](https://sites.google.com/chromium.org/driver/?pli=1) for Chrome
 - [GeckoDriver](https://github.com/mozilla/geckodriver/releases) for Firefox
 
