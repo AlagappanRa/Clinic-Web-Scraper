@@ -25,8 +25,8 @@ For Selenium to work, you'll also need a WebDriver for your browser
 - [ChromeDriver](https://sites.google.com/chromium.org/driver/?pli=1) for Chrome
 - [GeckoDriver](https://github.com/mozilla/geckodriver/releases) for Firefox
 
-Download the appropriate driver, unzip it, and place it in a known location on your system. 
-You might need to provide the path to this driver in the script or add it to your system's PATH.
+- Download the appropriate driver, unzip it, and place it in a known location on your system. 
+- You might need to provide the path to this driver in the script or add it to your system's PATH.
 
 5. Run the Script
 If you are using VSCode:
