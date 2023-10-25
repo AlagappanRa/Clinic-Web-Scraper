@@ -20,11 +20,10 @@ Navigate to the directory where you cloned the repository:
 3. You need to install Selenium for the web scraping functionality. Run the following command:
 `pip install selenium`
 
-4. Install Web Driver
-For Selenium to work, you'll also need a WebDriver for your browser:
-
-[ChromeDriver](https://sites.google.com/chromium.org/driver/?pli=1) for Chrome
-[GeckoDriver](https://github.com/mozilla/geckodriver/releases) for Firefox
+4. Install Web Driver (Skip this step if you already have a driver installed OR will be using microsoft edge)
+For Selenium to work, you'll also need a WebDriver for your browser
+- [ChromeDriver](https://sites.google.com/chromium.org/driver/?pli=1) for Chrome
+- [GeckoDriver](https://github.com/mozilla/geckodriver/releases) for Firefox
 
 Download the appropriate driver, unzip it, and place it in a known location on your system. 
 You might need to provide the path to this driver in the script or add it to your system's PATH.
