@@ -17,7 +17,7 @@ You can clone the repository using the following command:
 Navigate to the directory where you cloned the repository:
 `cd path_to_directory/Clinic-Web-Scraper`
 
-You need to install Selenium for the web scraping functionality. Run the following command:
+3. You need to install Selenium for the web scraping functionality. Run the following command:
 `pip install selenium`
 
 4. Install Web Driver
